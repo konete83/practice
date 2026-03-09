@@ -1,60 +1,68 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import {
-  createApiKey,
-  deleteApiKey,
-  toggleApiKey,
-  type ApiKey,
-} from "./actions";
+import { useState } from "react";
+
+export type ApiKey = {
+  id: string;
+  name: string;
+  key: string;
+  created_at: string;
+  last_used_at: string | null;
+  is_active: boolean;
+};
 
 function maskKey(key: string) {
   return key.slice(0, 7) + "••••••••" + key.slice(-4);
 }
 
-function CreateKeyForm({
-  onCreated,
-}: {
-  onCreated: (key: ApiKey & { fullKey: string }) => void;
-}) {
-  const [isPending, startTransition] = useTransition();
+function CreateKeyForm({ onCreated }: { onCreated: (key: ApiKey) => void }) {
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  function handleSubmit(formData: FormData) {
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setError("");
-    startTransition(async () => {
-      const result = await createApiKey(formData);
-      if ("error" in result) {
-        setError(result.error);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/keys", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        setError(json.error || "Failed to create key");
         return;
       }
-      onCreated({
-        id: crypto.randomUUID(),
-        name: formData.get("name") as string,
-        key: result.key,
-        created_at: new Date().toISOString(),
-        last_used_at: null,
-        is_active: true,
-        fullKey: result.key,
-      });
-    });
+
+      onCreated(json.data);
+      setName("");
+    } catch {
+      setError("Failed to connect to the API");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <form action={handleSubmit} className="mt-8 flex gap-3">
+    <form onSubmit={handleSubmit} className="mt-8 flex gap-3">
       <input
-        name="name"
         type="text"
         required
+        value={name}
+        onChange={(e) => setName(e.target.value)}
         placeholder="Key name (e.g. Production, Development)"
         className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500"
       />
       <button
         type="submit"
-        disabled={isPending}
+        disabled={loading}
         className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
       >
-        {isPending ? "Creating…" : "Create Key"}
+        {loading ? "Creating…" : "Create Key"}
       </button>
       {error && <p className="self-center text-sm text-red-500">{error}</p>}
     </form>
@@ -110,9 +118,33 @@ function KeyRow({
   onDelete: (id: string) => void;
   onToggle: (id: string, active: boolean) => void;
 }) {
-  const [isPending, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  async function handleToggle() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/keys/${apiKey.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !apiKey.is_active }),
+      });
+      if (res.ok) onToggle(apiKey.id, !apiKey.is_active);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/keys/${apiKey.id}`, { method: "DELETE" });
+      if (res.ok) onDelete(apiKey.id);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="flex items-center gap-4 rounded-lg border border-zinc-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-950">
@@ -153,13 +185,8 @@ function KeyRow({
           {copied ? "Copied!" : "Copy"}
         </button>
         <button
-          disabled={isPending}
-          onClick={() =>
-            startTransition(async () => {
-              await toggleApiKey(apiKey.id, !apiKey.is_active);
-              onToggle(apiKey.id, !apiKey.is_active);
-            })
-          }
+          disabled={loading}
+          onClick={handleToggle}
           className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm transition-colors hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
         >
           {apiKey.is_active ? "Revoke" : "Activate"}
@@ -168,13 +195,8 @@ function KeyRow({
         {showConfirm ? (
           <div className="flex gap-1">
             <button
-              disabled={isPending}
-              onClick={() =>
-                startTransition(async () => {
-                  await deleteApiKey(apiKey.id);
-                  onDelete(apiKey.id);
-                })
-              }
+              disabled={loading}
+              onClick={handleDelete}
               className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
             >
               Confirm
@@ -208,7 +230,7 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
       <CreateKeyForm
         onCreated={(created) => {
           setKeys((prev) => [created, ...prev]);
-          setNewFullKey(created.fullKey);
+          setNewFullKey(created.key);
         }}
       />
 
@@ -229,7 +251,9 @@ export function ApiKeysClient({ initialKeys }: { initialKeys: ApiKey[] }) {
             <KeyRow
               key={k.id}
               apiKey={k}
-              onDelete={(id) => setKeys((prev) => prev.filter((x) => x.id !== id))}
+              onDelete={(id) =>
+                setKeys((prev) => prev.filter((x) => x.id !== id))
+              }
               onToggle={(id, active) =>
                 setKeys((prev) =>
                   prev.map((x) =>

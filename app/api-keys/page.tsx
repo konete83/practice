@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getApiKeys } from "./actions";
+export const dynamic = "force-dynamic";
 import { DashboardClient } from "./dashboard-client";
 import { createClient } from "@/lib/supabase/server";
 import { SignOutButton } from "./sign-out-button";
