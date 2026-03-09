@@ -15,6 +15,9 @@ function LoginForm() {
       provider: "google",
       options: {
         redirectTo: `${window.location.origin}/auth/callback?next=/api-keys`,
+        queryParams: {
+          prompt: "select_account",
+        },
       },
     });
   }
