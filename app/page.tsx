@@ -56,12 +56,6 @@ export default function LandingPage() {
           </Link>
           <div className="flex items-center gap-3">
             <Link
-              href="/playground"
-              className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
-            >
-              Playground
-            </Link>
-            <Link
               href="/api-keys"
               className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-700 transition-colors hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white"
             >
@@ -100,7 +94,7 @@ export default function LandingPage() {
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
-              href="/playground"
+              href="/api-keys"
               className="rounded-xl bg-blue-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-500/30"
             >
               Try It Now →

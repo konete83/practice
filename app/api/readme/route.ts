@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 function parseGitHubUrl(url: string): { owner: string; repo: string } {
   const match = url
@@ -27,6 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate API key
+    const supabase = getSupabase();
     const { data: keyRecord, error: keyError } = await supabase
       .from("api_keys")
       .select("id, is_active")

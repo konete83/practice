@@ -112,6 +112,7 @@ function KeyRow({
 }) {
   const [isPending, startTransition] = useTransition();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   return (
     <div className="flex items-center gap-4 rounded-lg border border-zinc-200 bg-white px-5 py-4 dark:border-zinc-800 dark:bg-zinc-950">
@@ -141,6 +142,16 @@ function KeyRow({
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(apiKey.key);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }}
+          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          {copied ? "Copied!" : "Copy"}
+        </button>
         <button
           disabled={isPending}
           onClick={() =>
