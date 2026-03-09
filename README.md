@@ -106,7 +106,7 @@ Content-Type: application/json
 
 ## Author
 
-Built by Naga Bhukya as part of the Cursor Vibe Coding course.
+Built by Nagabhushanam as part of the Cursor Vibe Coding course.
 
 ## License
 
