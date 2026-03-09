@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GitSummarizer
+
+A Micro-SaaS application that analyzes any public GitHub repository and returns a structured report with stats, languages, and top contributors.
+
+Built with **Next.js 16**, **Supabase**, and **Tailwind CSS** as part of the Cursor Vibe Coding course.
+
+## Features
+
+- **GitHub Repo Analysis** — Paste any public GitHub URL and get a detailed report
+- **API Key Management** — Create, revoke, and delete API keys from the dashboard
+- **Interactive Playground** — Test the API directly in the browser with a visual report
+- **Landing Page** — Modern SaaS landing page with feature highlights
+
+## Tech Stack
+
+| Technology | Purpose |
+|-----------|---------|
+| Next.js 16 | React framework (App Router) |
+| TypeScript | Type-safe development |
+| Tailwind CSS v4 | Styling |
+| Supabase | Authentication & Database |
+| GitHub REST API | Repository data fetching |
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- A [Supabase](https://supabase.com) account (free tier works)
+
+### Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/cursor_course_naga.git
+   cd cursor_course_naga
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Create a `.env.local` file with your Supabase credentials:
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+4. Create the `api_keys` table in Supabase SQL Editor:
+   ```sql
+   CREATE TABLE api_keys (
+     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+     name TEXT NOT NULL,
+     key TEXT NOT NULL UNIQUE,
+     created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+     last_used_at TIMESTAMPTZ,
+     is_active BOOLEAN DEFAULT true NOT NULL
+   );
+   ```
+
+5. Run the dev server:
+   ```bash
+   npm run dev
+   ```
+
+6. Open [http://127.0.0.1:4000](http://127.0.0.1:4000)
+
+## API Usage
+
+### Summarize a Repository
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+POST /api/summarize
+Content-Type: application/json
+
+{
+  "github_url": "https://github.com/facebook/react",
+  "api_key": "sk_your_api_key"
+}
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "repo": "facebook/react",
+    "description": "The library for web and native user interfaces",
+    "stars": 232000,
+    "forks": 47000,
+    "languages": { "JavaScript": "55.1%", "TypeScript": "30.0%" },
+    "top_contributors": [...]
+  }
+}
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Pages
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page |
+| `/api-keys` | API key management dashboard |
+| `/playground` | Interactive API testing playground |
+| `/api/summarize` | API endpoint for repo analysis |
 
-## Learn More
+## Author
 
-To learn more about Next.js, take a look at the following resources:
+Built by Naga Bhukya as part of the Cursor Vibe Coding course.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
