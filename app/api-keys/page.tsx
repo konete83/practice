@@ -1,8 +1,12 @@
 import Link from "next/link";
 import { getApiKeys } from "./actions";
 import { ApiKeysClient } from "./api-keys-client";
+import { createClient } from "@/lib/supabase/server";
+import { SignOutButton } from "./sign-out-button";
 
 export default async function ApiKeysPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
   const apiKeys = await getApiKeys();
 
   return (
@@ -25,12 +29,14 @@ export default async function ApiKeysPage() {
             >
               Playground
             </Link>
-            <Link
-              href="/api-keys"
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-            >
-              Dashboard
-            </Link>
+            {user && (
+              <>
+                <span className="text-sm text-zinc-500 dark:text-zinc-400">
+                  {user.email}
+                </span>
+                <SignOutButton />
+              </>
+            )}
           </div>
         </div>
       </nav>
