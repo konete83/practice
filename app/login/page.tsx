@@ -75,7 +75,10 @@ function LoginForm() {
           </div>
 
           <p className="mt-6 text-center text-xs text-zinc-400">
-            By signing in, you agree to our Terms of Service.
+            By signing in, you agree to our{" "}
+            <a href="/terms" className="text-blue-500 underline">Terms of Service</a>
+            {" "}and{" "}
+            <a href="/privacy" className="text-blue-500 underline">Privacy Policy</a>.
           </p>
         </div>
       </div>

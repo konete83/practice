@@ -226,6 +226,12 @@ export default function LandingPage() {
             <a href="#how-it-works" className="hover:text-zinc-300">
               How It Works
             </a>
+            <Link href="/privacy" className="hover:text-zinc-300">
+              Privacy
+            </Link>
+            <Link href="/terms" className="hover:text-zinc-300">
+              Terms
+            </Link>
           </div>
         </div>
       </footer>
