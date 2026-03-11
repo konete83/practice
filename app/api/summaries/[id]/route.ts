@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+function isValidGitHubUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname === "github.com";
+  } catch {
+    return false;
+  }
+}
+
 async function getUser() {
   const supabase = await createClient();
   const {
@@ -49,7 +58,15 @@ export async function PATCH(
   const updates: Record<string, unknown> = {};
 
   if (body.repo) updates.repo = body.repo;
-  if (body.github_url) updates.github_url = body.github_url;
+  if (body.github_url) {
+    if (!isValidGitHubUrl(body.github_url)) {
+      return NextResponse.json(
+        { error: "github_url must be a valid https://github.com URL" },
+        { status: 400 }
+      );
+    }
+    updates.github_url = body.github_url;
+  }
   if (body.summary) updates.summary = body.summary;
   updates.updated_at = new Date().toISOString();
 

@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+function isValidGitHubUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" && parsed.hostname === "github.com";
+  } catch {
+    return false;
+  }
+}
+
 async function getUser() {
   const supabase = await createClient();
   const {
@@ -42,6 +51,13 @@ export async function POST(request: NextRequest) {
   if (!repo || !github_url || !summary) {
     return NextResponse.json(
       { error: "repo, github_url, and summary are required" },
+      { status: 400 }
+    );
+  }
+
+  if (!isValidGitHubUrl(github_url)) {
+    return NextResponse.json(
+      { error: "github_url must be a valid https://github.com URL" },
       { status: 400 }
     );
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { parseGitHubUrl, fetchGitHubReport } from "@/lib/github";
+import { rateLimit } from "@/lib/rate-limit";
 
 function getSupabase() {
   return createClient(
@@ -11,6 +12,15 @@ function getSupabase() {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+    const { allowed } = rateLimit(`summarize:${ip}`, 10, 60_000);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const { github_url, api_key } = body;
 
