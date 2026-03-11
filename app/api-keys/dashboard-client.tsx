@@ -307,8 +307,11 @@ function ExploreReposTab() {
     try {
       const res = await fetch(endpoint, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ github_url: githubUrl, api_key: apiKey }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({ github_url: githubUrl }),
       });
 
       const json = await res.json();

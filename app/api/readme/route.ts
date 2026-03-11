@@ -17,10 +17,16 @@ function parseGitHubUrl(url: string): { owner: string; repo: string } {
   return { owner: match[1], repo: match[2].replace(/\.git$/, "") };
 }
 
+function extractApiKey(request: NextRequest): string | null {
+  const auth = request.headers.get("authorization");
+  if (auth?.startsWith("Bearer ")) return auth.slice(7);
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get("x-forwarded-for") ?? "unknown";
-    const { allowed } = rateLimit(`readme:${ip}`, 10, 60_000);
+    const { allowed } = await rateLimit(`readme:${ip}`, 10, 60_000);
     if (!allowed) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
@@ -28,22 +34,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const apiKey = extractApiKey(request);
     const body = await request.json();
-    const { github_url, api_key } = body;
+    const { github_url } = body;
 
-    if (!github_url || !api_key) {
+    if (!github_url || !apiKey) {
       return NextResponse.json(
-        { error: "Both 'github_url' and 'api_key' are required" },
+        { error: "github_url in body and Authorization: Bearer <api_key> header are required" },
         { status: 400 }
       );
     }
 
-    // Validate API key
     const supabase = getSupabase();
     const { data: keyRecord, error: keyError } = await supabase
       .from("api_keys")
       .select("id, is_active")
-      .eq("key", api_key)
+      .eq("key", apiKey)
       .single();
 
     if (keyError || !keyRecord) {
@@ -60,13 +66,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Update last_used_at
     await supabase
       .from("api_keys")
       .update({ last_used_at: new Date().toISOString() })
       .eq("id", keyRecord.id);
 
-    // Parse GitHub URL
     let owner: string, repo: string;
     try {
       ({ owner, repo } = parseGitHubUrl(github_url));
@@ -77,7 +81,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch README from GitHub API (returns decoded content)
     const readmeRes = await fetch(
       `https://api.github.com/repos/${owner}/${repo}/readme`,
       {
@@ -99,8 +102,6 @@ export async function POST(request: NextRequest) {
     }
 
     const readmeData = await readmeRes.json();
-
-    // GitHub API returns base64-encoded content
     const content = Buffer.from(readmeData.content, "base64").toString("utf-8");
 
     return NextResponse.json({

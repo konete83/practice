@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { randomBytes } from "crypto";
+import { csrfCheck } from "@/lib/csrf";
 
 async function getUser() {
   const supabase = await createClient();
@@ -32,6 +33,8 @@ export async function GET() {
 
 // POST /api/keys — create a new API key
 export async function POST(request: NextRequest) {
+  const csrfError = csrfCheck(request);
+  if (csrfError) return csrfError;
   const { supabase, user } = await getUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

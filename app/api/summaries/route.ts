@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { csrfCheck } from "@/lib/csrf";
 
 function isValidGitHubUrl(url: string): boolean {
   try {
@@ -40,6 +41,8 @@ export async function GET() {
 
 // POST /api/summaries — save a new summary
 export async function POST(request: NextRequest) {
+  const csrfError = csrfCheck(request);
+  if (csrfError) return csrfError;
   const { supabase, user } = await getUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
